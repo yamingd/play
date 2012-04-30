@@ -1,0 +1,12 @@
+--functions
+add
+update
+search
+more_like_this
+clear
+rebuild
+optimize
+
+--input json
+--output lazylist
+--query builder
