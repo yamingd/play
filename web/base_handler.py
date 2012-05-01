@@ -45,7 +45,7 @@ class PlayRequestHandler(tornado.web.RequestHandler):
     
     @property
     def referer(self):
-        return self.request.headers['Referer']
+        return self.request.headers.get('Referer','')
         
     @property
     def is_spider(self):
@@ -79,19 +79,7 @@ class PlayRequestHandler(tornado.web.RequestHandler):
             self.set_cookie(self.conf.session.cookie_id, sessid, 
                             expires_days=self.conf.session.cookie_expires_days)
         return sessid
-    
-    def browser_css(self):
-        css = ''
-        agent = self.user_agent()
-        if agent:
-            browser = agent.browser.name
-            version = agent.browser.version
-            if browser == 'Microsoft Internet Explorer':
-                version = int(version.split('.')[0])
-                if version < 9:
-                    css = 'ie ie-'+ str(version)
-        return css
-        
+            
     def prepare(self):
         """Called at the beginning of a request before `get`/`post`/etc.
 
@@ -246,7 +234,7 @@ class PlayRequestHandler(tornado.web.RequestHandler):
         message = out.getvalue()
         out.close()
         
-        send_mail(subject, message, 
+        send_email(subject, message, 
                   self.conf.site.webmaster, 
                   self.conf.site.admin_mail.split(','))
         
@@ -260,7 +248,6 @@ class PlayRequestHandler(tornado.web.RequestHandler):
         kkwargs['h'] = self.h
         kkwargs['c'] = self.c
         kkwargs['conf'] = self.conf
-        kkwargs['agentcss'] = self.browser_css()
         return kkwargs
     
     def render_string(self, template_name, **kwargs):

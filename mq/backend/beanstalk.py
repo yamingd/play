@@ -21,6 +21,7 @@ class BeanstalkEngine(EngineBase):
         self.count = 0
         self.pool = None
         log.info('init BeanstalkEngine')
+        self.connect()
         
     def connect(self):
         if not self.pool:

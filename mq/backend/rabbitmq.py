@@ -62,7 +62,7 @@ class RabbitMQEngine(EngineBase):
         self.connection = None
         self.count = 0
         self._connstr = "amqp://%s:%s%s/%s" % (self.conf.host, self.conf.port, \
-                                               self.conf.vhost, self.queue.exchange)
+                                               self.conf.vhost, self.conf.exchange)
         
         self.channel = None
         self.cl = None
@@ -71,6 +71,7 @@ class RabbitMQEngine(EngineBase):
         self._reconnect_delay = None
         self.spec_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),u'amqp0-8.xml')
         log.info('init RabbitMQEngine')
+        self.connect()
         
     def connect(self):
         if not self.connection:
@@ -214,11 +215,6 @@ class RabbitMQEngine(EngineBase):
         if self._reconnect_delay:
             self._reconnect_delay.cancel()
             self._reconnect_delay = None
-
-        if self._dc is not None:
-            self._dc.cancel()
-            d.addCallback(cancelConsumer, self.channel)
-            self._dc = None
 
         if self.channel is not None:
             d.addCallback(closeChannel, self.channel)

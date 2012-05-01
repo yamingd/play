@@ -21,7 +21,7 @@ class ConsumerBase(object):
         How to handle your message, data is instance ODict
         """
         h = qmanager.find_handler(data)
-        h and h(data)
+        h and h.execute(data)
         
     def on_message_fail(self, data):
         pass
