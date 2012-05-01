@@ -189,26 +189,26 @@ class RabbitMQEngine(EngineBase):
     
     def stop(self):
         def cancelConsumer(_, channel):
-            log.debug("Stop consuming %s..." % self._constag)
+            print "Stop consuming %s..." % self._constag
             return channel.basic_cancel(self.queue.consumer_tag)
 
         def closeChannel(_, channel):
-            log.debug("Closing channel...")
+            print "Closing channel..."
             return channel.channel_close()
 
         def getNewChannel(_, connection):
-            log.debug("Getting a new channel for closing connection...")
+            print "Getting a new channel for closing connection..."
             return connection.channel(0)
 
         def closeConnection(channel):
-            log.debug("Closing connection...")
+            print "Closing connection..."
             return channel.connection_close()
 
         def connectorStopped(_):
-            log.debug("Connector stopped")
+            print "Connector stopped"
             return self
 
-        log.debug("Stopping connector to %s" % self._connstr)
+        print "Stopping connector to %s" % self._connstr
         d = defer.succeed(None)
 
         self._disconnecting = True

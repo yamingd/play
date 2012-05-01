@@ -2,6 +2,17 @@
 from play.utils.functional import LazyObject, empty
 
 class AppGlobal(object):
+    """
+    you can access:
+    from play import app_global
+    app_global.dbm
+    app_global.redis
+    app_global.cache
+    app_global.search.person.add
+    app_global.models.Person.find_byid(id)
+    --------------------------------------
+    dbm,redis,cache,search are the keys of settings
+    """
     def __init__(self):
         self.fmp = {}
     

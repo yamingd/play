@@ -12,6 +12,8 @@ class ConsumerBase(object):
         self.backend = backend
         self.qname = qname
         self.queue = qmanager.find_queue(qname)
+        if self.queue is None:
+            raise Exception("Please check, can't find Queue with name="+qname)
         
     def start(self):
         self.backend.listen(self)

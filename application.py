@@ -56,8 +56,8 @@ class Application(tornado.web.Application):
         )
         
         self._load_handlers()
-        self._load_models()
-        self._load_mq_handlers()
+        _load_models(settings)
+        _load_mq_handlers(settings)
         
         tornado.web.Application.__init__(self, handlers, **app_settings)
         
@@ -84,12 +84,17 @@ class Application(tornado.web.Application):
                     pass
         return ui_modules_map
     
-    def _load_models(self):
+    def _load_handlers(self):
+        logging.info('loading http request handlers')
+        for app_name in self.app_settings.apps:
+            __import__('apps.%s' % app_name, globals(), locals(), ['handlers'], -1)
+
+def _load_models(app_settings):
         """
         Database Model.
         """
         logging.info('loading database model')
-        for app_name in self.app_settings.apps:
+        for app_name in app_settings.apps:
             _models = __import__('apps.%s' % app_name, globals(), locals(),
                                      ['models'], -1)
             try:
@@ -118,30 +123,25 @@ class Application(tornado.web.Application):
         
         setattr(app_global, 'models', model_manager)
         
-    def _load_handlers(self):
-        logging.info('loading http request handlers')
-        for app_name in self.app_settings.apps:
-            __import__('apps.%s' % app_name, globals(), locals(), ['handlers'], -1)
-    
-    def _load_mq_handlers(self):
-        logging.info('loading mq handlers')
-        for app_name in self.app_settings.apps:
-            _models = __import__('apps.%s' % app_name, globals(), locals(), ['mq'], -1)
+def _load_mq_handlers(app_settings):
+    logging.info('loading mq handlers')
+    for app_name in app_settings.apps:
+        _models = __import__('apps.%s' % app_name, globals(), locals(), ['mq'], -1)
+        try:
+            models = _models.mq
+        except AttributeError:
+            # this app simply doesn't have a models.py file
+            continue
+        logging.debug(models)
+        for name in [x for x in dir(models) if re.findall('[A-Z]\w+', x)]:
+            thing = getattr(models, name)
+            logging.debug(thing)
             try:
-                models = _models.mq
-            except AttributeError:
-                # this app simply doesn't have a models.py file
-                continue
-            logging.debug(models)
-            for name in [x for x in dir(models) if re.findall('[A-Z]\w+', x)]:
-                thing = getattr(models, name)
-                logging.debug(thing)
-                try:
-                    if issubclass(thing, mq.Message):
-                        model_manager.add(thing)
-                except TypeError:
-                    # most likely a builtin class or something
-                    pass
+                if issubclass(thing, mq.Message):
+                    model_manager.add(thing)
+            except TypeError:
+                # most likely a builtin class or something
+                pass
                 
 def setup_environ(args, settings_mod):
     logging.info('setup environ')
@@ -232,9 +232,15 @@ def start_mq(args, settings):
     from play.conf import settings
     from play.mq import consumer
     from twisted.internet import reactor      
-      
-    backend = None
-    task = ConsumerBase(backend, options.queue)
+    from play import app_global
+    
+    if not options.queue:
+        print 'please specific queue name.'
+    
+    _load_models(settings)
+    _load_mq_handlers(settings)
+        
+    task = consumer.ConsumerBase(app_global.mq, options.queue)
     
     reactor.callLater(0.1, task.start)
     
